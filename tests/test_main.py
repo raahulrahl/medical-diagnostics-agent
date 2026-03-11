@@ -43,7 +43,9 @@ async def test_handler_with_multiple_messages():
 
     with (
         patch("medical_diagnostics_agent.main._initialized", True),
-        patch("medical_diagnostics_agent.main.run_agent", new_callable=AsyncMock, return_value=mock_response) as mock_run,
+        patch(
+            "medical_diagnostics_agent.main.run_agent", new_callable=AsyncMock, return_value=mock_response
+        ) as mock_run,
     ):
         result = await handler(messages)
 
@@ -64,7 +66,9 @@ async def test_handler_initialization():
     with (
         patch("medical_diagnostics_agent.main._initialized", False),
         patch("medical_diagnostics_agent.main.initialize_agent", new_callable=AsyncMock) as mock_init,
-        patch("medical_diagnostics_agent.main.run_agent", new_callable=AsyncMock, return_value=mock_response) as mock_run,
+        patch(
+            "medical_diagnostics_agent.main.run_agent", new_callable=AsyncMock, return_value=mock_response
+        ) as mock_run,
         patch("medical_diagnostics_agent.main._init_lock", new_callable=MagicMock()) as mock_lock,
     ):
         # Configure the lock to work as an async context manager
@@ -172,10 +176,14 @@ async def test_handler_error_handling():
 
     with (
         patch("medical_diagnostics_agent.main._initialized", True),
-        patch("medical_diagnostics_agent.main.run_agent", new_callable=AsyncMock, side_effect=Exception("Medical analysis failed")),
+        patch(
+            "medical_diagnostics_agent.main.run_agent",
+            new_callable=AsyncMock,
+            side_effect=Exception("Medical analysis failed"),
+        ),
+        pytest.raises(Exception, match="Medical analysis failed"),
     ):
-        with pytest.raises(Exception, match="Medical analysis failed"):
-            await handler(messages)
+        await handler(messages)
 
 
 @pytest.mark.asyncio

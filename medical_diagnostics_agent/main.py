@@ -8,12 +8,12 @@ import os
 import sys
 import traceback
 from pathlib import Path
-from textwrap import dedent
 from typing import Any, cast
 
 from bindu.penguin.bindufy import bindufy
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from .agents import run_medical_diagnosis
 
@@ -53,41 +53,31 @@ def load_config() -> dict[str, Any]:
 
 class MedicalDiagnosticsAgent:
     """Medical Diagnostics Agent wrapper following the research-agent pattern."""
-    
+
     def __init__(self, model_name: str = "gpt-4o"):
+        """Initialize medical diagnostics agent with model name."""
         self.model_name = model_name
-        
-        # Model selection logic (supports OpenRouter via OpenAI client)
-        openai_api_key = os.getenv("OPENAI_API_KEY")
+
+        # Model selection logic (only supports OpenRouter)
         openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
-        
+
         if openrouter_api_key:
-            # Use OpenRouter API key with OpenAI client - need to pass api_key explicitly
+            # Use OpenRouter API key with OpenAI client
             self.model = ChatOpenAI(
-                model=model_name,
-                api_key=openrouter_api_key,
-                base_url="https://openrouter.ai/api/v1",
+                model_name=model_name,
+                openai_api_key=SecretStr(openrouter_api_key),
+                openai_api_base="https://openrouter.ai/api/v1",
                 temperature=0,
-                openai_api_key=openrouter_api_key  # Explicitly set for OpenRouter
             )
             print(f"✅ Using OpenRouter model: {model_name}")
-        elif openai_api_key:
-            # Use regular OpenAI
-            self.model = ChatOpenAI(
-                model="gpt-4o",
-                api_key=openai_api_key,
-                temperature=0
-            )
-            print(f"✅ Using OpenAI model: gpt-4o")
         else:
             # Define error message separately to avoid TRY003
             error_msg = (
-                "No API key provided. Set OPENAI_API_KEY or OPENROUTER_API_KEY environment variable.\n"
-                "For OpenAI: https://platform.openai.com/api-keys\n"
+                "No API key provided. Set OPENROUTER_API_KEY environment variable.\n"
                 "For OpenRouter: https://openrouter.ai/keys"
             )
             raise ValueError(error_msg)
-    
+
     async def arun(self, messages: list[dict[str, str]]) -> str:
         """Run the agent with the given messages - matches research-agent pattern."""
         # Extract medical report from messages
@@ -96,14 +86,14 @@ class MedicalDiagnosticsAgent:
             if message.get("role") == "user":
                 medical_report = message.get("content", "")
                 break
-        
+
         if not medical_report:
             return "Error: No medical report provided in the user message."
 
         try:
             # Run the medical diagnosis pipeline
             final_diagnosis = await run_medical_diagnosis(medical_report, self.model_name)
-            
+
             # Format the response
             response = f"""### Final Diagnosis:
 
@@ -114,11 +104,11 @@ class MedicalDiagnosticsAgent:
 *Specialist inputs: Cardiologist, Psychologist, Pulmonologist*
 *Model: {self.model_name}*
 """
-            
+
             return response
-            
+
         except Exception as e:
-            error_msg = f"Error during medical diagnosis: {str(e)}"
+            error_msg = f"Error during medical diagnosis: {e!s}"
             print(f"❌ {error_msg}")
             traceback.print_exc()
             return error_msg
@@ -139,7 +129,7 @@ async def initialize_agent() -> None:
         print(f"✅ Using OpenRouter model: {model_name}")
     elif openai_api_key:
         agent = MedicalDiagnosticsAgent()
-        print(f"✅ Using OpenAI model: gpt-4o")
+        print("✅ Using OpenAI model: gpt-4o")
     else:
         # Define error message separately to avoid TRY003
         error_msg = (

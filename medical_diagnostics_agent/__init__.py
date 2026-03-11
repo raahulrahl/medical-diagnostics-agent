@@ -7,8 +7,7 @@
 #
 #  Thank you users! We ❤️ you! - 🌻
 
-"""medical-diagnostics-agent - An Bindu Agent.
-"""
+"""medical-diagnostics-agent - An Bindu Agent."""
 
 from medical_diagnostics_agent.__version__ import __version__
 from medical_diagnostics_agent.main import (

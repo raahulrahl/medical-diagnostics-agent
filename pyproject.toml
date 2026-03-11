@@ -100,12 +100,18 @@ select = [
     "RUF",
     # tryceratops
     "TRY",
+    # pydocstyle
+    "D",
 ]
 ignore = [
     # LineTooLong
     "E501",
     # DoNotAssignLambda
     "E731",
+    # Allow long messages in exceptions for medical diagnostics
+    "TRY003",
+    # Allow try-except patterns for error handling
+    "TRY300",
 ]
 
 [tool.ruff.lint.per-file-ignores]
